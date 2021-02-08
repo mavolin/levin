@@ -70,10 +70,10 @@ func NewMiddlewares(l *zap.SugaredLogger) bot.MiddlewareFunc {
 			l := l.With(
 				"command_provider", ctx.InvokedCommand.ProviderName,
 				"command_id", ctx.InvokedCommand.Identifier,
-				"message", ctx.Message,
+				"message", ctx.Content,
 				"lang", ctx.Lang,
 				"invoker_id", ctx.Author.ID,
-				"message_id", ctx.Message.ID,
+				"message_id", ctx.ID,
 				"channel_id", ctx.ChannelID,
 				"guild_id", ctx.GuildID,
 			)
