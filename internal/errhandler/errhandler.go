@@ -18,9 +18,7 @@ import (
 // CommandError returns the logger function used for errors.Log.
 // It logs the error using the passed *zap.SugaredLogger, and extracts the
 // assigned *sentry.Hub and *zap.SugaredLogger from the context using sentryadam.Get.
-func CommandError(l *zap.SugaredLogger) func(error, *plugin.Context) {
-	l = l.Named("bot")
-
+func CommandError() func(error, *plugin.Context) {
 	return func(err error, ctx *plugin.Context) {
 		sentryadam.Get(ctx).CaptureException(err)
 

@@ -33,7 +33,7 @@ func init() {
 	zaplog.Init(*debug)
 	log = zap.S().Named("startup")
 
-	errors.Log = errhandler.CommandError(zap.S())
+	errors.Log = errhandler.CommandError()
 
 	log.With("custom_path", *configPath).
 		Info("reading config")
@@ -54,7 +54,7 @@ func init() {
 }
 
 func main() {
-	defer zap.S().Sync()
+	defer zap.S().Sync() //nolint:errcheck
 	defer sentry.Flush(3 * time.Second)
 
 	b, err := bot.New(bot.Options{
