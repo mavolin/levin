@@ -11,10 +11,13 @@ import (
 	"github.com/mavolin/adam/pkg/errors"
 	"github.com/mavolin/adam/pkg/impl/command/help"
 	"github.com/mavolin/disstate/v3/pkg/state"
+	i18nimpl "github.com/nicksnyder/go-i18n/v2/i18n"
 	"go.uber.org/zap"
+	"golang.org/x/text/language"
 
 	"github.com/mavolin/levin/internal/config"
 	"github.com/mavolin/levin/internal/errhandler"
+	"github.com/mavolin/levin/internal/i18nwrapper"
 	sentryadam "github.com/mavolin/levin/internal/sentry"
 	"github.com/mavolin/levin/internal/zaplog"
 )
@@ -22,7 +25,9 @@ import (
 var (
 	debug = flag.Bool("debug", false,
 		"Sets the log-level to debug and uses human-readable logs. Additionally, it disables sentry error capturing.")
-	configPath = flag.String("config", "", "A custom path to the configuration file.")
+	configPath       = flag.String("config", "", "A custom path to the configuration file.")
+	translationsPath = flag.String("translations", "",
+		"A path to a directory containing additional translation files.")
 )
 
 var log *zap.SugaredLogger
@@ -32,7 +37,6 @@ func init() {
 
 	zaplog.Init(*debug)
 	log = zap.S().Named("startup")
-
 	errors.Log = errhandler.CommandError()
 
 	log.With("custom_path", *configPath).
@@ -57,6 +61,13 @@ func main() {
 	defer zap.S().Sync() //nolint:errcheck
 	defer sentry.Flush(3 * time.Second)
 
+	bundle := i18nimpl.NewBundle(language.English)
+	err := i18nwrapper.Load(bundle, *translationsPath)
+	if err != nil {
+		log.With("err", err).
+			Fatal("unable to load translation files")
+	}
+
 	b, err := bot.New(bot.Options{
 		Token:               config.C.Token,
 		Owners:              config.C.Owners,
@@ -77,7 +88,7 @@ func main() {
 	log.Info("starting bot")
 
 	b.State.MustAddHandlerOnce(func(_ *state.State, e *state.ReadyEvent) {
-		log.Infof("serving as %s:%s", e.User.Username, e.User.Discriminator)
+		log.Infof("serving as %s#%s", e.User.Username, e.User.Discriminator)
 	})
 
 	if err := b.Open(); err != nil {

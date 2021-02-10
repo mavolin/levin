@@ -9,6 +9,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
+        with:
+          stable: false
+          go-version: '1.16.0-rc1'
+      - name: Add empty translation file
+        run: |
+          mkdir assets/translations -p
+          touch assets/translations/empty.json
+          echo {} >> assets/translations/empty.json
       - name: Generate coverage report
         run: go test --race -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Upload coverage to Codecov
