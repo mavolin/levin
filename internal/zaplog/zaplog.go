@@ -52,11 +52,17 @@ func mustStdLogAt(l *zap.Logger, lvl zapcore.Level) *log.Logger {
 	return stdl
 }
 
-// Get extracts a *zap.SugaredLogger from the Context.
-// This will only work, if a *zap.SugaredLogger was previously stored in the
-// Context under 'logger', e.g. using NewMiddleware.
+// Get attempts to retrieve a *zap.SugaredLogger by accessing the element
+// stored under the 'logger' key.
+// If the retrieved logger is nil, zap.NewNop().Sugar() will be returned.
 func Get(ctx *plugin.Context) *zap.SugaredLogger {
-	return ctx.Get(loggerKey).(*zap.SugaredLogger)
+	if logger := ctx.Get(loggerKey); logger != nil {
+		if logger, ok := logger.(*zap.SugaredLogger); ok && logger != nil {
+			return logger
+		}
+	}
+
+	return zap.NewNop().Sugar()
 }
 
 // NewMiddlewares creates a new bot.MiddlewareFunc that stores the passed
