@@ -14,6 +14,7 @@ func Init() error {
 		Debug:            false,
 		AttachStacktrace: false,
 		SampleRate:       config.C.Sentry.SampleRate,
+		TracesSampleRate: config.C.Sentry.TracesSampleRate,
 		ServerName:       config.C.ServerName,
 		Release:          meta.Version,
 		Environment:      config.C.Sentry.Environment,
