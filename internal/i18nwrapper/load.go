@@ -54,8 +54,8 @@ func (d *definition) isEmpty() bool {
 }
 
 var (
-	eFileRegexp  = regexp.MustCompile(`^(?P<lang>.+?)(?:_(?:adam|levin))?\.json$`)
-	owFileRegexp = regexp.MustCompile(`^(?P<lang>.+?)\.json$`)
+	defaultFileRegexp = regexp.MustCompile(`^(?P<lang>.+?)(?:_(?:adam|levin))?\.json$`)
+	customFileRegexp  = regexp.MustCompile(`^(?P<lang>.+?)\.json$`)
 )
 
 func loadEmbeddedTranslations(b *i18nimpl.Bundle) error {
@@ -69,7 +69,7 @@ func loadEmbeddedTranslations(b *i18nimpl.Bundle) error {
 			continue
 		}
 
-		matches := eFileRegexp.FindStringSubmatch(f.Name())
+		matches := defaultFileRegexp.FindStringSubmatch(f.Name())
 		if len(matches) < 2 {
 			log().With("file_name", f.Name()).
 				Warn("found non-translation file in embedded translations, skipping")
@@ -110,7 +110,7 @@ func loadCustomTranslations(b *i18nimpl.Bundle, customPath string) error {
 			continue
 		}
 
-		matches := owFileRegexp.FindStringSubmatch(f.Name())
+		matches := customFileRegexp.FindStringSubmatch(f.Name())
 		if len(matches) < 2 {
 			continue
 		}
@@ -120,7 +120,7 @@ func loadCustomTranslations(b *i18nimpl.Bundle, customPath string) error {
 			continue
 		}
 
-		f, err := assets.Translations.Open(customPath + f.Name())
+		f, err := os.Open(customPath + f.Name())
 		if err != nil {
 			return err
 		}
@@ -143,7 +143,7 @@ func loadTranslation(b *i18nimpl.Bundle, tag language.Tag, f fs.File) error {
 	for _, m := range messages {
 		var def definition
 
-		if bytes.HasPrefix(m.Definition, []byte(`"`)) {
+		if bytes.HasPrefix(m.Definition, []byte(`"`)) { // just once
 			if err := json.Unmarshal(m.Definition, &def.Other); err != nil {
 				return err
 			}
