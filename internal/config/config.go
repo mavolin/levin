@@ -7,12 +7,14 @@ import (
 	"reflect"
 	"strings"
 	"time"
+	_ "time/tzdata" // used for parsing locations
 
 	"github.com/diamondburned/arikawa/v2/discord"
 	"github.com/diamondburned/arikawa/v2/gateway"
 	"github.com/iancoleman/strcase"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"golang.org/x/text/language"
 )
 
 // C is the global config of levin.
@@ -22,9 +24,12 @@ func log() *zap.SugaredLogger { return zap.S().Named("config") }
 
 // config is the type holding all configurational data.
 type config struct { //nolint:maligned
-	Token           string   `mapstructure:"bot_token"`
-	DefaultPrefixes []string `mapstructure:"default_prefixes"`
-	Owners          []discord.UserID
+	Token  string `mapstructure:"bot_token"`
+	Owners []discord.UserID
+
+	DefaultPrefixes []string       `mapstructure:"default_prefixes"`
+	DefaultLanguage language.Tag   `mapstructure:"-"`
+	DefaultTimeZone *time.Location `mapstructure:"-"`
 
 	Status       gateway.Status
 	ActivityType discord.ActivityType `mapstructure:"-"`
@@ -39,6 +44,11 @@ type config struct { //nolint:maligned
 		SampleRate  float64 `mapstructure:"sample_rate"`
 	}
 
+	Mongo struct {
+		URI          string
+		DatabaseName string
+	}
+
 	ServerName string `mapstructure:"server_name"`
 }
 
@@ -50,6 +60,15 @@ func Zero() { C = config{} }
 // of searching in the current directory, ./config and $CONFIG_DIR/
 func Load(configPath string) error {
 	v := viper.New()
+
+	v.RegisterAlias("mongo.db_name", "mongo.database_name")
+	_ = v.BindEnv("mongo.database_name", "LEVIN_MONGO_DB_NAME")
+
+	v.RegisterAlias("default_lang", "default_language")
+	_ = v.BindEnv("default_language", "LEVIN_DEFAULT_LANG")
+
+	v.RegisterAlias("default_tz", "default_time_zone")
+	_ = v.BindEnv("default_time_zone", "LEVIN_DEFAULT_TZ")
 
 	v.SetEnvPrefix("levin")
 	v.AutomaticEnv()
@@ -131,6 +150,8 @@ func unmarshal(v *viper.Viper) error {
 		return err
 	}
 
+	C.DefaultLanguage = parseLanguage(v.GetString("default_language"))
+	C.DefaultTimeZone = parseTimeZone(v.GetString("default_time_zone"))
 	C.EditAge = time.Duration(v.GetInt("edit_age")) * time.Second
 	C.ActivityType, C.ActivtyName = parseActivity(v.GetString("activity"))
 	C.Status = validateStatus(gateway.Status(v.GetString("status")))
@@ -152,6 +173,24 @@ func validateStatus(status gateway.Status) gateway.Status {
 	}
 
 	return status
+}
+
+func parseLanguage(lang string) language.Tag {
+	t, err := language.Parse(lang)
+	if err != nil {
+		return language.English
+	}
+
+	return t
+}
+
+func parseTimeZone(tzstr string) *time.Location {
+	tz, err := time.LoadLocation(tzstr)
+	if err != nil {
+		return time.UTC
+	}
+
+	return tz
 }
 
 var activityTypes = map[discord.ActivityType]string{

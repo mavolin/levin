@@ -20,6 +20,7 @@ import (
 	"github.com/mavolin/levin/internal/i18nwrapper"
 	sentryadam "github.com/mavolin/levin/internal/sentry"
 	"github.com/mavolin/levin/internal/zaplog"
+	"github.com/mavolin/levin/plugins/conf"
 )
 
 var (
@@ -68,8 +69,15 @@ func main() {
 			Fatal("unable to load translation files")
 	}
 
+	repo, err := newRepository()
+	if err != nil {
+		log.With("err", err).
+			Fatal("unable to initialize repository")
+	}
+
 	b, err := bot.New(bot.Options{
 		Token:               config.C.Token,
+		SettingsProvider:    conf.NewSettingsProvider(bundle, repo),
 		Owners:              config.C.Owners,
 		EditAge:             config.C.EditAge,
 		AllowBot:            config.C.AllowBot,
@@ -110,8 +118,12 @@ func main() {
 }
 
 func addMiddlewares(b *bot.Bot) {
+	smw := sentryadam.NewMiddlewares(sentry.CurrentHub())
+	b.MessageCreateMiddlewares = append(b.MessageCreateMiddlewares, smw.MessageCreateMiddleware)
+	b.MessageUpdateMiddlewares = append(b.MessageUpdateMiddlewares, smw.MessageUpdateMiddleware)
+	b.MustAddMiddleware(smw.BotMiddleware)
+
 	b.MustAddMiddleware(zaplog.NewMiddlewares(zap.S()))
-	b.MustAddMiddleware(sentryadam.NewMiddleware(sentry.CurrentHub()))
 }
 
 func addPlugins(b *bot.Bot) {
