@@ -36,9 +36,7 @@ type config struct { //nolint:maligned
 	Sentry struct {
 		DSN         string
 		Environment string
-
-		SampleRate       float64 `mapstructure:"sample_rate"`
-		TracesSampleRate float64 `mapstructure:"traces_sample_rate"`
+		SampleRate  float64 `mapstructure:"sample_rate"`
 	}
 
 	ServerName string `mapstructure:"server_name"`

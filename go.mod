@@ -3,7 +3,6 @@ module github.com/mavolin/levin
 go 1.16
 
 require (
-	github.com/diamondburned/arikawa v1.3.14
 	github.com/diamondburned/arikawa/v2 v2.0.2
 	github.com/getsentry/sentry-go v0.9.0
 	github.com/iancoleman/strcase v0.1.3
