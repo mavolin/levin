@@ -110,7 +110,13 @@ func main() {
 }
 
 func addMiddlewares(b *bot.Bot) {
-	b.MustAddMiddleware(sentryadam.NewMiddleware(sentry.CurrentHub()))
+	sentryMiddlewares := sentryadam.NewMiddlewares(sentry.CurrentHub())
+
+	b.MessageCreateMiddlewares = append(b.MessageCreateMiddlewares, sentryMiddlewares.MessageCreateMiddleware)
+	b.MessageUpdateMiddlewares = append(b.MessageUpdateMiddlewares, sentryMiddlewares.MessageUpdateMiddleware)
+	b.MustAddMiddleware(sentryMiddlewares.Middleware)
+	b.MustAddPostMiddleware(sentryMiddlewares.PostMiddleware)
+
 	b.MustAddMiddleware(zaplog.NewMiddlewares(zap.S()))
 }
 

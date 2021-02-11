@@ -21,7 +21,7 @@ var C config
 func log() *zap.SugaredLogger { return zap.S().Named("config") }
 
 // config is the type holding all configurational data.
-type config struct {
+type config struct { //nolint:maligned
 	Token           string   `mapstructure:"bot_token"`
 	DefaultPrefixes []string `mapstructure:"default_prefixes"`
 	Owners          []discord.UserID
@@ -35,8 +35,10 @@ type config struct {
 
 	Sentry struct {
 		DSN         string
-		SampleRate  float64 `mapstructure:"sample_rate"`
 		Environment string
+
+		SampleRate       float64 `mapstructure:"sample_rate"`
+		TracesSampleRate float64 `mapstructure:"traces_sample_rate"`
 	}
 
 	ServerName string `mapstructure:"server_name"`
@@ -105,11 +107,13 @@ func bindEnvs(v *viper.Viper, val reflect.Type, base string) error {
 		name = base + name
 
 		if f.Type.Kind() == reflect.Struct {
-			if err := bindEnvs(v, f.Type, name); err != nil {
+			if err := bindEnvs(v, f.Type, name+"."); err != nil {
 				return err
 			}
 		} else {
-			err := v.BindEnv(name, fmt.Sprintf("LEVIN_%s", strings.ToUpper(name)))
+			envName := strings.ReplaceAll(strings.ToUpper(name), ".", "_")
+
+			err := v.BindEnv(name, fmt.Sprintf("LEVIN_%s", envName))
 			if err != nil {
 				return err
 			}
