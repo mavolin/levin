@@ -17,10 +17,10 @@ import (
 
 // CommandError returns the logger function used for errors.Log.
 // It logs the error using the passed *zap.SugaredLogger, and extracts the
-// assigned *sentry.Hub and *zap.SugaredLogger from the context using sentryadam.GetHub.
+// assigned *sentry.Hub and *zap.SugaredLogger from the context using sentryadam.Get.
 func CommandError() func(error, *plugin.Context) {
 	return func(err error, ctx *plugin.Context) {
-		sentryadam.GetHub(ctx).CaptureException(err)
+		sentryadam.Get(ctx).CaptureException(err)
 
 		l := zaplog.Get(ctx).With("err", err)
 
