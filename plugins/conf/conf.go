@@ -2,14 +2,14 @@
 package conf
 
 import (
+	"time"
+
 	"github.com/diamondburned/arikawa/v2/discord"
 	"github.com/mavolin/adam/pkg/bot"
-	"github.com/mavolin/adam/pkg/i18n"
+	"github.com/mavolin/adam/pkg/impl/arg"
+	"github.com/mavolin/adam/pkg/impl/module"
+	"github.com/mavolin/adam/pkg/plugin"
 	"github.com/mavolin/disstate/v3/pkg/state"
-	i18nimpl "github.com/nicksnyder/go-i18n/v2/i18n"
-
-	"github.com/mavolin/levin/internal/i18nwrapper"
-	sentryadam "github.com/mavolin/levin/internal/sentry"
 )
 
 type Repository interface {
@@ -23,41 +23,57 @@ type Repository interface {
 	// UserLanguage returns the BCP 47 language tag of the user with the passed
 	// id.
 	UserLanguage(userID discord.UserID) (string, error)
+	// GuildTimezone returns the IANA timezone identifier of the guild's
+	// timezone.
+	GuildTimezone(guildID discord.GuildID) (*time.Location, error)
+	// UserTimezone returns the IANA timezone identifier of the user's
+	// timezone.
+	UserTimezone(userID discord.UserID) (*time.Location, error)
 }
 
-// NewSettingsProvider creates a new bot.SettingsProvider using the passed
-// *i18nimpl.Bundle and Repository.
-func NewSettingsProvider(bundle *i18nimpl.Bundle, r Repository) bot.SettingsProvider {
-	return func(b *state.Base, m *discord.Message) ([]string, *i18n.Localizer) {
-		var prefixes []string
-		if m.GuildID > 0 {
+// Configuration is the configuration module
+type Configuration struct {
+	*module.Module
+	repo Repository
+}
+
+// New creates a new configuration module.
+func New(r Repository) *Configuration {
+	return &Configuration{
+		Module: module.New(module.LocalizedMeta{
+			Name:             "conf",
+			ShortDescription: shortDescription,
+		}),
+		repo: r,
+	}
+}
+
+// Open adds a timezone middleware to the bot and disables time zone fallbacks
+// in case the location could not be loaded.
+func (c *Configuration) Open(b *bot.Bot) {
+	arg.DefaultLocation = nil
+	b.MustAddMiddleware(newTimezoneMiddleware(c.repo))
+}
+
+func newTimezoneMiddleware(r Repository) bot.MiddlewareFunc {
+	return func(next bot.CommandFunc) bot.CommandFunc {
+		return func(s *state.State, ctx *plugin.Context) error {
+			var tz *time.Location
 			var err error
 
-			prefixes, err = r.Prefixes(m.GuildID)
-			if err != nil {
-				prefixes = nil
-				sentryadam.Get(b).CaptureException(err)
-			}
-		}
-
-		if m.GuildID == 0 {
-			lang, err := r.UserLanguage(m.Author.ID)
-			if err != nil {
-				sentryadam.Get(b).CaptureException(err)
-				return prefixes, i18n.NewFallbackLocalizer()
+			if ctx.GuildID == 0 {
+				tz, err = r.UserTimezone(ctx.Author.ID)
+			} else {
+				tz, err = r.GuildTimezone(ctx.GuildID)
 			}
 
-			f := i18nwrapper.FuncForBundle(bundle, lang)
-			return prefixes, i18n.NewLocalizer(lang, f)
-		}
+			if err != nil {
+				ctx.HandleErrorSilently(err)
+				return next(s, ctx)
+			}
 
-		lang, err := r.GuildLanguage(m.GuildID)
-		if err != nil {
-			sentryadam.Get(b).CaptureException(err)
-			return prefixes, i18n.NewFallbackLocalizer()
+			ctx.Set(arg.LocationKey, tz)
+			return next(s, ctx)
 		}
-
-		f := i18nwrapper.FuncForBundle(bundle, lang)
-		return prefixes, i18n.NewLocalizer(lang, f)
 	}
 }
