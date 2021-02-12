@@ -76,14 +76,15 @@ func main() {
 	}
 
 	b, err := bot.New(bot.Options{
-		Token:               config.C.Token,
-		SettingsProvider:    conf.NewSettingsProvider(bundle, repo),
-		Owners:              config.C.Owners,
-		EditAge:             config.C.EditAge,
-		AllowBot:            config.C.AllowBot,
-		GatewayErrorHandler: errhandler.Gateway(zap.S(), sentry.CurrentHub()),
-		StateErrorHandler:   errhandler.StateError(zap.S(), sentry.CurrentHub()),
-		StatePanicHandler:   errhandler.StatePanic(zap.S(), sentry.CurrentHub()),
+		Token:            config.C.Token,
+		SettingsProvider: conf.NewSettingsProvider(bundle, repo),
+		Owners:           config.C.Owners,
+		EditAge:          config.C.EditAge,
+		Status:           config.C.Status,
+		ActivityType:     config.C.ActivityType,
+		ActivityName:     config.C.ActivityName,
+		ActivityURL:      config.C.ActivityURL,
+		AllowBot:         config.C.AllowBot,
 	})
 	if err != nil {
 		log.With("err", err).

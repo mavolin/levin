@@ -33,7 +33,8 @@ type config struct { //nolint:maligned
 
 	Status       gateway.Status
 	ActivityType discord.ActivityType `mapstructure:"-"`
-	ActivtyName  string               `mapstructure:"-"`
+	ActivityName string               `mapstructure:"-"`
+	ActivityURL  discord.URL
 
 	EditAge  time.Duration `mapstructure:"edit_age"`
 	AllowBot bool          `mapstructure:"allow_bot"`
@@ -46,7 +47,7 @@ type config struct { //nolint:maligned
 
 	Mongo struct {
 		URI          string
-		DatabaseName string
+		DatabaseName string `mapstructure:"database_name"`
 	}
 
 	ServerName string `mapstructure:"server_name"`
@@ -153,7 +154,7 @@ func unmarshal(v *viper.Viper) error {
 	C.DefaultLanguage = parseLanguage(v.GetString("default_language"))
 	C.DefaultTimeZone = parseTimeZone(v.GetString("default_time_zone"))
 	C.EditAge = time.Duration(v.GetInt("edit_age")) * time.Second
-	C.ActivityType, C.ActivtyName = parseActivity(v.GetString("activity"))
+	C.ActivityType, C.ActivityName = parseActivity(v.GetString("activity"))
 	C.Status = validateStatus(gateway.Status(v.GetString("status")))
 
 	return nil
