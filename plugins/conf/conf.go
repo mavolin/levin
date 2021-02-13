@@ -13,10 +13,10 @@ import (
 )
 
 type Repository interface {
-	// Prefixes returns the prefixes of the guild with the passed id.
-	// If the returned prefixes are nil, the guild is considered to only use
+	// Prefix returns the prefix of the guild with the passed id.
+	// If the returned prefix is empty, the guild is considered to only use
 	// mentions.
-	Prefixes(guildID discord.GuildID) ([]string, error)
+	Prefix(guildID discord.GuildID) (string, error)
 	// GuildLanguage returns the BCP 47 language tag of the guild with the
 	// passed id.
 	GuildLanguage(guildID discord.GuildID) (string, error)
@@ -52,6 +52,7 @@ func New(r Repository) *Configuration {
 // in case the location could not be loaded.
 func (c *Configuration) Open(b *bot.Bot) {
 	arg.DefaultLocation = nil
+	arg.LocationKey = "location"
 	b.MustAddMiddleware(newTimezoneMiddleware(c.repo))
 }
 

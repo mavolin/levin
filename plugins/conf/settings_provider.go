@@ -15,14 +15,14 @@ import (
 // *i18nimpl.Bundle and Repository.
 func NewSettingsProvider(bundle *i18nimpl.Bundle, r Repository) bot.SettingsProvider {
 	return func(b *state.Base, m *discord.Message) ([]string, *i18n.Localizer) {
-		var prefixes []string
+		var prefix string
 
 		if m.GuildID > 0 {
 			var err error
 
-			prefixes, err = r.Prefixes(m.GuildID)
+			prefix, err = r.Prefix(m.GuildID)
 			if err != nil {
-				prefixes = nil
+				prefix = ""
 				sentryadam.Get(b).CaptureException(err)
 			}
 		}
@@ -38,10 +38,10 @@ func NewSettingsProvider(bundle *i18nimpl.Bundle, r Repository) bot.SettingsProv
 
 		if err != nil {
 			sentryadam.Get(b).CaptureException(err)
-			return prefixes, i18n.NewFallbackLocalizer()
+			return []string{prefix}, i18n.NewFallbackLocalizer()
 		}
 
 		f := i18nwrapper.FuncForBundle(bundle, lang)
-		return prefixes, i18n.NewLocalizer(lang, f)
+		return []string{prefix}, i18n.NewLocalizer(lang, f)
 	}
 }

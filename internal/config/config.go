@@ -27,7 +27,7 @@ type config struct { //nolint:maligned
 	Token  string `mapstructure:"bot_token"`
 	Owners []discord.UserID
 
-	DefaultPrefixes []string       `mapstructure:"default_prefixes"`
+	DefaultPrefix   string         `mapstructure:"default_prefix"`
 	DefaultLanguage language.Tag   `mapstructure:"-"`
 	DefaultTimeZone *time.Location `mapstructure:"-"`
 

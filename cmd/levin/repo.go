@@ -14,7 +14,7 @@ type Repository interface {
 
 func newRepository() (Repository, error) {
 	defaults := &repository.Defaults{
-		Prefixes: config.C.DefaultPrefixes,
+		Prefix:   config.C.DefaultPrefix,
 		Language: config.C.DefaultLanguage.String(),
 		TimeZone: config.C.DefaultTimeZone,
 	}

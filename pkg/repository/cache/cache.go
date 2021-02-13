@@ -25,7 +25,7 @@ type Cache interface {
 
 type (
 	GuildSettings struct {
-		Prefixes []string
+		Prefix   string
 		Language string
 		TimeZone *time.Location
 	}
@@ -41,15 +41,11 @@ func (s *GuildSettings) Clone() *GuildSettings {
 		return nil
 	}
 
-	cp := &GuildSettings{
+	return &GuildSettings{
+		Prefix:   s.Prefix,
 		Language: s.Language,
 		TimeZone: s.TimeZone,
 	}
-
-	cp.Prefixes = make([]string, len(s.Prefixes))
-	copy(cp.Prefixes, s.Prefixes)
-
-	return cp
 }
 
 func (s *UserSettings) Clone() *UserSettings {

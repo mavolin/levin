@@ -24,26 +24,22 @@ var _ conf.Repository = new(Repository)
 
 type guildSettings struct {
 	GuildID  discord.GuildID `bson:"guild_id"`
-	Prefixes []string        `bson:"prefixes,omitempty"`
+	Prefix   string          `bson:"prefix,omitempty"`
 	Language string          `bson:"language,omitempty"`
 	TimeZone *Location       `bson:"time_zone"`
 }
 
 func newDefaultGuildSettings(d *repository.Defaults) *guildSettings {
-	s := &guildSettings{
+	return &guildSettings{
+		Prefix:   d.Prefix,
 		Language: d.Language,
 		TimeZone: (*Location)(d.TimeZone),
 	}
-
-	s.Prefixes = make([]string, len(d.Prefixes))
-	copy(s.Prefixes, d.Prefixes)
-
-	return s
 }
 
 func newGuildSettingsFromCache(s *cache.GuildSettings) *guildSettings {
 	return &guildSettings{
-		Prefixes: s.Prefixes,
+		Prefix:   s.Prefix,
 		Language: s.Language,
 		TimeZone: (*Location)(s.TimeZone),
 	}
@@ -51,7 +47,7 @@ func newGuildSettingsFromCache(s *cache.GuildSettings) *guildSettings {
 
 func (s *guildSettings) CacheType() *cache.GuildSettings {
 	return &cache.GuildSettings{
-		Prefixes: s.Prefixes,
+		Prefix:   s.Prefix,
 		Language: s.Language,
 		TimeZone: s.TimeZone.Location(),
 	}
@@ -90,13 +86,13 @@ func (s *userSettings) CacheType() *cache.UserSettings {
 // Methods
 // =====================================================================================
 
-func (r *Repository) Prefixes(guildID discord.GuildID) ([]string, error) {
+func (r *Repository) Prefix(guildID discord.GuildID) (string, error) {
 	s, err := r.getGuildSettings(guildID)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return s.Prefixes, nil
+	return s.Prefix, nil
 }
 
 func (r *Repository) GuildLanguage(guildID discord.GuildID) (string, error) {

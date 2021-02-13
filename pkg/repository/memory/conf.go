@@ -10,7 +10,7 @@ import (
 
 type (
 	GuildSettings struct {
-		Prefixes []string
+		Prefix   string
 		Language string
 		TimeZone *time.Location
 	}
@@ -23,8 +23,8 @@ type (
 
 var _ conf.Repository = new(Repository)
 
-func (d *Repository) Prefixes(guildID discord.GuildID) ([]string, error) {
-	return d.guildSettings(guildID).Prefixes, nil
+func (d *Repository) Prefix(guildID discord.GuildID) (string, error) {
+	return d.guildSettings(guildID).Prefix, nil
 }
 
 func (d *Repository) GuildLanguage(guildID discord.GuildID) (string, error) {
@@ -41,13 +41,12 @@ func (d *Repository) guildSettings(guildID discord.GuildID) *GuildSettings {
 		settings = &GuildSettings{
 			Language: d.defaults.Language,
 			TimeZone: d.defaults.TimeZone,
+			Prefix:   d.defaults.Prefix,
 		}
-
-		settings.Prefixes = make([]string, len(d.defaults.Prefixes))
-		copy(settings.Prefixes, d.defaults.Prefixes)
 
 		d.GuildSettings[guildID] = settings
 	}
+
 	return settings
 }
 
