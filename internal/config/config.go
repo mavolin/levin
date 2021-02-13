@@ -186,9 +186,13 @@ func parseLanguage(lang string) language.Tag {
 }
 
 func parseTimeZone(tzstr string) *time.Location {
+	if len(tzstr) == 0 {
+		return nil
+	}
+
 	tz, err := time.LoadLocation(tzstr)
 	if err != nil {
-		return time.UTC
+		return nil
 	}
 
 	return tz
