@@ -104,7 +104,7 @@ func (r *Repository) GuildLanguage(guildID discord.GuildID) (string, error) {
 	return s.Language, nil
 }
 
-func (r *Repository) GuildTimezone(guildID discord.GuildID) (*time.Location, error) {
+func (r *Repository) GuildTimeZone(guildID discord.GuildID) (*time.Location, error) {
 	s, err := r.getGuildSettings(guildID)
 	if err != nil {
 		return nil, err
@@ -122,7 +122,7 @@ func (r *Repository) UserLanguage(userID discord.UserID) (string, error) {
 	return s.Language, nil
 }
 
-func (r *Repository) UserTimezone(userID discord.UserID) (*time.Location, error) {
+func (r *Repository) UserTimeZone(userID discord.UserID) (*time.Location, error) {
 	s, err := r.getUserSettings(userID)
 	if err != nil {
 		return nil, err

@@ -23,12 +23,12 @@ type Repository interface {
 	// UserLanguage returns the BCP 47 language tag of the user with the passed
 	// id.
 	UserLanguage(userID discord.UserID) (string, error)
-	// GuildTimezone returns the IANA timezone identifier of the guild's
+	// GuildTimeZone returns the IANA timezone identifier of the guild's
 	// timezone.
-	GuildTimezone(guildID discord.GuildID) (*time.Location, error)
-	// UserTimezone returns the IANA timezone identifier of the user's
+	GuildTimeZone(guildID discord.GuildID) (*time.Location, error)
+	// UserTimeZone returns the IANA timezone identifier of the user's
 	// timezone.
-	UserTimezone(userID discord.UserID) (*time.Location, error)
+	UserTimeZone(userID discord.UserID) (*time.Location, error)
 }
 
 // Configuration is the configuration module
@@ -63,9 +63,9 @@ func newTimezoneMiddleware(r Repository) bot.MiddlewareFunc {
 			var err error
 
 			if ctx.GuildID == 0 {
-				tz, err = r.UserTimezone(ctx.Author.ID)
+				tz, err = r.UserTimeZone(ctx.Author.ID)
 			} else {
-				tz, err = r.GuildTimezone(ctx.GuildID)
+				tz, err = r.GuildTimeZone(ctx.GuildID)
 			}
 
 			if err != nil {
