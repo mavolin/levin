@@ -20,7 +20,7 @@ import (
 	"github.com/mavolin/levin/internal/i18nwrapper"
 	sentryadam "github.com/mavolin/levin/internal/sentry"
 	"github.com/mavolin/levin/internal/zaplog"
-	"github.com/mavolin/levin/plugins/conf"
+	"github.com/mavolin/levin/pkg/confgetter"
 )
 
 var (
@@ -77,7 +77,7 @@ func main() {
 
 	b, err := bot.New(bot.Options{
 		Token:            config.C.Token,
-		SettingsProvider: conf.NewSettingsProvider(bundle, repo),
+		SettingsProvider: confgetter.NewSettingsProvider(repo, bundle),
 		Owners:           config.C.Owners,
 		EditAge:          config.C.EditAge,
 		Status:           config.C.Status,
