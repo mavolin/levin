@@ -25,9 +25,41 @@ var (
 // Arguments
 // =====================================================================================
 
+var argNewPrefixName = i18n.NewFallbackConfig("plugin.conf.prefix.arg.plugin.name", "New Prefix")
+
+// =============================================================================
+// Flags
+// =====================================================================================
+
+var flagRemoveDescription = i18n.NewFallbackConfig(
+	"plugin.conf.prefix.flag.remove.description",
+	"If you set this flag, the current prefix will be removed without replacement. "+
+		"You can still use my commands by mentioning me.")
+
+// =============================================================================
+// Responses
+// =====================================================================================
+
 var (
-	argNewPrefixName     = i18n.NewFallbackConfig("plugin.conf.prefix.arg.plugin.name", "New Prefix")
-	argPluginDescription = i18n.NewFallbackConfig(
-		"plugin.conf.prefix.arg.plugin.description",
-		"The new prefix you want me to use. It may not contain whitespace.")
+	responseCurrentPrefix = i18n.NewFallbackConfig(
+		"plugin.conf.prefix.response.current_prefix",
+		"The prefix on this server is ``{{.prefix}}``.")
+
+	responseNoPrefix = i18n.NewFallbackConfig(
+		"plugin.conf.prefix.response.no_prefix",
+		"There is no custom prefix on this server.")
+
+	responsePrefixChanged = i18n.NewFallbackConfig(
+		"plugin.conf.prefix.response.prefix_changed",
+		"🔧 Successfully changed the prefix to ``{{.new_prefix}}``.")
+)
+
+type (
+	responseCurrentPrefixPlaceholders struct {
+		Prefix string
+	}
+
+	responsePrefixChangedPlaceholders struct {
+		NewPrefix string
+	}
 )

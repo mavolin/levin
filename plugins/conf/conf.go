@@ -3,23 +3,25 @@ package conf
 
 import (
 	"github.com/mavolin/adam/pkg/impl/module"
+	"github.com/mavolin/adam/pkg/plugin"
 
 	"github.com/mavolin/levin/pkg/confgetter"
+	"github.com/mavolin/levin/plugins/conf/prefix"
 )
 
-// Configuration is the configuration module
-type Configuration struct {
-	*module.Module
-	repo confgetter.Repository
+type Repository interface {
+	confgetter.Repository
+	prefix.Repository
 }
 
 // New creates a new configuration module.
-func New(r confgetter.Repository) *Configuration {
-	return &Configuration{
-		Module: module.New(module.LocalizedMeta{
-			Name:             "conf",
-			ShortDescription: shortDescription,
-		}),
-		repo: r,
-	}
+func New(r Repository) plugin.Module {
+	m := module.New(module.LocalizedMeta{
+		Name:             "conf",
+		ShortDescription: shortDescription,
+	})
+
+	m.AddCommand(prefix.New(r))
+
+	return m
 }
