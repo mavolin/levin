@@ -62,14 +62,7 @@ func Zero() { C = config{} }
 func Load(configPath string) error {
 	v := viper.New()
 
-	v.RegisterAlias("mongo.db_name", "mongo.database_name")
-	_ = v.BindEnv("mongo.database_name", "LEVIN_MONGO_DB_NAME")
-
-	v.RegisterAlias("default_lang", "default_language")
-	_ = v.BindEnv("default_language", "LEVIN_DEFAULT_LANG")
-
-	v.RegisterAlias("default_tz", "default_time_zone")
-	_ = v.BindEnv("default_time_zone", "LEVIN_DEFAULT_TZ")
+	bindAliases(v)
 
 	v.SetEnvPrefix("levin")
 	v.AutomaticEnv()
@@ -101,6 +94,17 @@ func Load(configPath string) error {
 	}
 
 	return err
+}
+
+func bindAliases(v *viper.Viper) {
+	v.RegisterAlias("mongo.db_name", "mongo.database_name")
+	_ = v.BindEnv("mongo.database_name", "LEVIN_MONGO_DB_NAME")
+
+	v.RegisterAlias("default_lang", "default_language")
+	_ = v.BindEnv("default_language", "LEVIN_DEFAULT_LANG")
+
+	v.RegisterAlias("default_tz", "default_time_zone")
+	_ = v.BindEnv("default_time_zone", "LEVIN_DEFAULT_TZ")
 }
 
 // bindEnvs binds all config fields to environment variables.
@@ -142,6 +146,8 @@ func bindEnvs(v *viper.Viper, val reflect.Type, base string) error {
 }
 
 func loadDefaults(v *viper.Viper) {
+	v.SetDefault("default_language", "en")
+	v.SetDefault("default_timezone", "UTC")
 	v.SetDefault("allow_bot", false)
 	v.SetDefault("edit_age", 15 /* seconds */)
 }
@@ -187,12 +193,12 @@ func parseLanguage(lang string) language.Tag {
 
 func parseTimeZone(tzstr string) *time.Location {
 	if len(tzstr) == 0 {
-		return nil
+		return time.UTC
 	}
 
 	tz, err := time.LoadLocation(tzstr)
 	if err != nil {
-		return nil
+		return time.UTC
 	}
 
 	return tz
