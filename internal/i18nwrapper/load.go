@@ -14,7 +14,7 @@ import (
 )
 
 // Load loads the embedded translation files.
-// Optionally, if customPath isn't empty it will load additional translations
+// Optionally, if customPath isn't empty, it will load additional translations
 // found int the passed path.
 // All non-translation files will be skipped.
 func Load(b *i18nimpl.Bundle, customPath string) error {
@@ -143,7 +143,7 @@ func loadTranslation(b *i18nimpl.Bundle, tag language.Tag, f fs.File) error {
 	for _, m := range messages {
 		var def definition
 
-		if bytes.HasPrefix(m.Definition, []byte(`"`)) { // just once
+		if bytes.HasPrefix(m.Definition, []byte(`"`)) { // just other
 			if err := json.Unmarshal(m.Definition, &def.Other); err != nil {
 				return err
 			}

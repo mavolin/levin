@@ -7,6 +7,7 @@ import (
 	"github.com/mavolin/adam/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"golang.org/x/text/language"
 
 	"github.com/mavolin/levin/pkg/confgetter"
 	"github.com/mavolin/levin/pkg/repository"
@@ -21,12 +22,12 @@ var _ confgetter.Repository = new(Repository)
 // ================================ guildSettings ================================
 
 type guildSettings struct {
-	GuildID          discord.GuildID  `bson:"guild_id"`
+	GuildID          discord.GuildID  `bson:"guild_id,omitempty"`
 	Prefix           string           `bson:"prefix,omitempty"`
 	Language         languageTag      `bson:"language,omitempty"`
-	TimeZone         *location        `bson:"time_zone"`
-	BotMasterUserIDs []discord.UserID `bson:"bot_master_user_ids"`
-	BotMasterRoleIDs []discord.RoleID `bson:"bot_master_role_ids"`
+	TimeZone         *location        `bson:"time_zone,omitempty"`
+	BotMasterUserIDs []discord.UserID `bson:"bot_master_user_ids,omitempty"`
+	BotMasterRoleIDs []discord.RoleID `bson:"bot_master_role_ids,omitempty"`
 }
 
 func newDefaultGuildSettings(guildID discord.GuildID, d *repository.Defaults) *guildSettings {
@@ -51,9 +52,9 @@ func (s *guildSettings) toConfType() *confgetter.GuildSettings {
 // ================================ userSettings ================================
 
 type userSettings struct {
-	UserID   discord.UserID `bson:"user_id"`
+	UserID   discord.UserID `bson:"user_id,omitempty"`
 	Language languageTag    `bson:"language,omitempty"`
-	TimeZone *location      `bson:"time_zone"`
+	TimeZone *location      `bson:"time_zone,omitempty"`
 }
 
 func newDefaultUserSettings(userID discord.UserID, d *repository.Defaults) *userSettings {
@@ -120,7 +121,7 @@ func (r *Repository) SetPrefix(guildID discord.GuildID, prefix string) error {
 	}
 
 	err := r.db.Client().UseSession(context.Background(), func(ctx mongo.SessionContext) error {
-		res, err := r.guildSettings.UpdateOne(context.Background(), bson.M{"guild_id": guildID},
+		res, err := r.guildSettings.UpdateOne(context.Background(), guildSettings{GuildID: guildID},
 			bson.M{"prefix": prefix})
 		if err != nil {
 			return errors.WithStack(err)
@@ -131,8 +132,42 @@ func (r *Repository) SetPrefix(guildID discord.GuildID, prefix string) error {
 		}
 
 		// new guild
+
 		s := newDefaultGuildSettings(guildID, r.defaults)
 		s.Prefix = prefix
+
+		_, err = r.guildSettings.InsertOne(ctx, s)
+		return errors.WithStack(err)
+	})
+
+	return errors.WithStack(err)
+}
+
+func (r *Repository) SetGuildLanguage(guildID discord.GuildID, lang language.Tag) error {
+	if !guildID.IsValid() {
+		return errors.NewWithStack("repository: invalid guild id")
+	}
+
+	if s := r.cache.GuildSettings(guildID); s != nil {
+		s.Language = lang
+		r.cache.SetGuildSettings(guildID, s)
+	}
+
+	err := r.db.Client().UseSession(context.Background(), func(ctx mongo.SessionContext) error {
+		res, err := r.guildSettings.UpdateOne(context.Background(), guildSettings{GuildID: guildID},
+			guildSettings{Language: languageTag(lang)})
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		if res.MatchedCount > 0 {
+			return nil
+		}
+
+		// new guild
+
+		s := newDefaultGuildSettings(guildID, r.defaults)
+		s.Language = languageTag(lang)
 
 		_, err = r.guildSettings.InsertOne(ctx, s)
 		return errors.WithStack(err)
@@ -173,4 +208,37 @@ func (r *Repository) UserSettings(userID discord.UserID) (*confgetter.UserSettin
 
 	r.cache.SetUserSettings(userID, sconf)
 	return sconf, nil
+}
+
+func (r *Repository) SetUserLanguage(userID discord.UserID, lang language.Tag) error {
+	if !userID.IsValid() {
+		return errors.NewWithStack("repository: invalid guild id")
+	}
+
+	if s := r.cache.UserSettings(userID); s != nil {
+		s.Language = lang
+		r.cache.SetUserSettings(userID, s)
+	}
+
+	err := r.db.Client().UseSession(context.Background(), func(ctx mongo.SessionContext) error {
+		res, err := r.userSettings.UpdateOne(context.Background(), userSettings{UserID: userID},
+			guildSettings{Language: languageTag(lang)})
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		if res.MatchedCount > 0 {
+			return nil
+		}
+
+		// new guild
+
+		s := newDefaultUserSettings(userID, r.defaults)
+		s.Language = languageTag(lang)
+
+		_, err = r.userSettings.InsertOne(ctx, s)
+		return errors.WithStack(err)
+	})
+
+	return errors.WithStack(err)
 }
