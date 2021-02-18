@@ -2,20 +2,25 @@
 package memory
 
 import (
+	"sync"
+
 	"github.com/diamondburned/arikawa/v2/discord"
 
+	"github.com/mavolin/levin/pkg/confgetter"
 	"github.com/mavolin/levin/pkg/repository"
 )
 
 type Repository struct {
-	GuildSettings map[discord.GuildID]*GuildSettings
-	UserSettings  map[discord.UserID]*UserSettings
+	GuildSettingsData  map[discord.GuildID]*confgetter.GuildSettings
+	guildSettingsMutex sync.RWMutex
+
+	UserSettingsData  map[discord.UserID]*confgetter.UserSettings
+	userSettingsMutex sync.RWMutex
 
 	defaults *repository.Defaults
 }
 
 // New creates a new in-memory database.
 func New(d *repository.Defaults) *Repository {
-	d.FillZeros()
 	return &Repository{defaults: d}
 }

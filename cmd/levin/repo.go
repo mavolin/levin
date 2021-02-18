@@ -2,20 +2,20 @@ package main
 
 import (
 	"github.com/mavolin/levin/internal/config"
+	"github.com/mavolin/levin/pkg/confgetter"
 	"github.com/mavolin/levin/pkg/repository"
 	"github.com/mavolin/levin/pkg/repository/memory"
 	"github.com/mavolin/levin/pkg/repository/mongo"
-	"github.com/mavolin/levin/plugins/conf"
 )
 
 type Repository interface {
-	conf.Repository
+	confgetter.Repository
 }
 
 func newRepository() (Repository, error) {
 	defaults := &repository.Defaults{
 		Prefix:   config.C.DefaultPrefix,
-		Language: config.C.DefaultLanguage.String(),
+		Language: config.C.DefaultLanguage,
 		TimeZone: config.C.DefaultTimeZone,
 	}
 

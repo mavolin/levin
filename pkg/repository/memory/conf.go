@@ -1,72 +1,39 @@
 package memory
 
 import (
-	"time"
-
 	"github.com/diamondburned/arikawa/v2/discord"
 
-	"github.com/mavolin/levin/plugins/conf"
+	"github.com/mavolin/levin/pkg/confgetter"
 )
 
-type (
-	GuildSettings struct {
-		Prefix   string
-		Language string
-		TimeZone *time.Location
-	}
+var _ confgetter.Repository = new(Repository)
 
-	UserSettings struct {
-		Language string
-		TimeZone *time.Location
-	}
-)
+func (d *Repository) GuildSettings(guildID discord.GuildID) (*confgetter.GuildSettings, error) {
 
-var _ conf.Repository = new(Repository)
-
-func (d *Repository) Prefix(guildID discord.GuildID) (string, error) {
-	return d.guildSettings(guildID).Prefix, nil
-}
-
-func (d *Repository) GuildLanguage(guildID discord.GuildID) (string, error) {
-	return d.guildSettings(guildID).Language, nil
-}
-
-func (d *Repository) GuildTimeZone(guildID discord.GuildID) (*time.Location, error) {
-	return d.guildSettings(guildID).TimeZone, nil
-}
-
-func (d *Repository) guildSettings(guildID discord.GuildID) *GuildSettings {
-	settings, ok := d.GuildSettings[guildID]
+	settings, ok := d.GuildSettingsData[guildID]
 	if !ok {
-		settings = &GuildSettings{
+		settings = &confgetter.GuildSettings{
 			Language: d.defaults.Language,
 			TimeZone: d.defaults.TimeZone,
 			Prefix:   d.defaults.Prefix,
 		}
 
-		d.GuildSettings[guildID] = settings
+		d.GuildSettingsData[guildID] = settings
 	}
 
-	return settings
+	return settings, nil
 }
 
-func (d *Repository) UserLanguage(userID discord.UserID) (string, error) {
-	return d.userSettings(userID).Language, nil
-}
-
-func (d *Repository) UserTimeZone(userID discord.UserID) (*time.Location, error) {
-	return d.userSettings(userID).TimeZone, nil
-}
-
-func (d *Repository) userSettings(userID discord.UserID) *UserSettings {
-	settings, ok := d.UserSettings[userID]
+func (d *Repository) UserSettings(userID discord.UserID) (*confgetter.UserSettings, error) {
+	settings, ok := d.UserSettingsData[userID]
 	if !ok {
-		settings = &UserSettings{
+		settings = &confgetter.UserSettings{
 			Language: d.defaults.Language,
 			TimeZone: d.defaults.TimeZone,
 		}
 
-		d.UserSettings[userID] = settings
+		d.UserSettingsData[userID] = settings
 	}
-	return settings
+
+	return settings, nil
 }

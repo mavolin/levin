@@ -6,49 +6,53 @@ import (
 
 	"github.com/diamondburned/arikawa/v2/discord"
 
-	cache2 "github.com/mavolin/levin/pkg/repository/cache"
+	"github.com/mavolin/levin/pkg/confgetter"
+	"github.com/mavolin/levin/pkg/repository/cache"
+	"github.com/mavolin/levin/pkg/repository/clone"
 )
 
 type Cache struct {
-	guildSettings      map[discord.GuildID]*cache2.GuildSettings
+	guildSettings      map[discord.GuildID]*confgetter.GuildSettings
 	guildSettingsMutex sync.RWMutex
 
-	userSettings      map[discord.UserID]*cache2.UserSettings
+	userSettings      map[discord.UserID]*confgetter.UserSettings
 	userSettingsMutex sync.RWMutex
 }
+
+var _ cache.Cache = new(Cache)
 
 // New creates a new in-memory cache.
 func New() *Cache {
 	return &Cache{
-		guildSettings: make(map[discord.GuildID]*cache2.GuildSettings),
-		userSettings:  make(map[discord.UserID]*cache2.UserSettings),
+		guildSettings: make(map[discord.GuildID]*confgetter.GuildSettings),
+		userSettings:  make(map[discord.UserID]*confgetter.UserSettings),
 	}
 }
 
-func (c *Cache) GuildSettings(guildID discord.GuildID) *cache2.GuildSettings {
+func (c *Cache) GuildSettings(guildID discord.GuildID) *confgetter.GuildSettings {
 	c.guildSettingsMutex.RLock()
 	defer c.guildSettingsMutex.RUnlock()
 
-	return c.guildSettings[guildID].Clone()
+	return clone.GuildSettings(c.guildSettings[guildID])
 }
 
-func (c *Cache) SetGuildSettings(guildID discord.GuildID, s *cache2.GuildSettings) {
+func (c *Cache) SetGuildSettings(guildID discord.GuildID, s *confgetter.GuildSettings) {
 	c.guildSettingsMutex.Lock()
 	defer c.guildSettingsMutex.Unlock()
 
-	c.guildSettings[guildID] = s.Clone()
+	c.guildSettings[guildID] = clone.GuildSettings(s)
 }
 
-func (c *Cache) UserSettings(userID discord.UserID) *cache2.UserSettings {
+func (c *Cache) UserSettings(userID discord.UserID) *confgetter.UserSettings {
 	c.userSettingsMutex.RLock()
 	defer c.userSettingsMutex.RUnlock()
 
-	return c.userSettings[userID].Clone()
+	return clone.UserSettings(c.userSettings[userID])
 }
 
-func (c *Cache) SetUserSettings(userID discord.UserID, s *cache2.UserSettings) {
+func (c *Cache) SetUserSettings(userID discord.UserID, s *confgetter.UserSettings) {
 	c.userSettingsMutex.Lock()
 	defer c.userSettingsMutex.Unlock()
 
-	c.userSettings[userID] = s.Clone()
+	c.userSettings[userID] = clone.UserSettings(s)
 }

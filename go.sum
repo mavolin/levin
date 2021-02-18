@@ -232,6 +232,8 @@ github.com/mavolin/adam v0.0.0-20210210225417-2c8352bd8851 h1:zTza+Ylhvq8T2ZQ2J5
 github.com/mavolin/adam v0.0.0-20210210225417-2c8352bd8851/go.mod h1:Qn283SOqOD1GdSdhxrxtjC/kPt6PQcY3XU5hUurmmu4=
 github.com/mavolin/adam v0.0.0-20210213003825-311e51e88a22 h1:1MP0xddyFLM8bkjiEkhR8qmnw0WAssWniiUNALQgJlc=
 github.com/mavolin/adam v0.0.0-20210213003825-311e51e88a22/go.mod h1:Qn283SOqOD1GdSdhxrxtjC/kPt6PQcY3XU5hUurmmu4=
+github.com/mavolin/adam v0.0.0-20210218163210-9ad770023a3f h1:lLCa4KIwgvRvKIjyohY5sXbdacqK8x5oHOp9Mas3mTA=
+github.com/mavolin/adam v0.0.0-20210218163210-9ad770023a3f/go.mod h1:Qn283SOqOD1GdSdhxrxtjC/kPt6PQcY3XU5hUurmmu4=
 github.com/mavolin/dismock/v2 v2.0.0 h1:+SHLlNHrX84BGxax6I4W/VLNo/ElO/ilS/YUoHwykjk=
 github.com/mavolin/dismock/v2 v2.0.0/go.mod h1:JewIhG8EUSrmdLjG3tHYHp7mNR4W23u6X+ippoCCsDY=
 github.com/mavolin/disstate/v3 v3.1.1 h1:FXlDcnESumhcQ5tSkInrdW4LOLHiMi5GON0CTj4gIhg=

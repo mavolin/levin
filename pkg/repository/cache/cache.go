@@ -2,59 +2,23 @@
 package cache
 
 import (
-	"time"
-
 	"github.com/diamondburned/arikawa/v2/discord"
+
+	"github.com/mavolin/levin/pkg/confgetter"
 )
 
 // Cache is the cache abstraction.
 type Cache interface {
 	// GuildSettings returns the settings of the guild with the passed id.
 	// If the settings are not cached, it returns nil.
-	GuildSettings(guildID discord.GuildID) *GuildSettings
+	GuildSettings(guildID discord.GuildID) *confgetter.GuildSettings
 	// SetGuildSettings updates the settings of the guild with the passed id,
 	// with the passed settings.
-	SetGuildSettings(guildID discord.GuildID, s *GuildSettings)
+	SetGuildSettings(guildID discord.GuildID, s *confgetter.GuildSettings)
 	// UserSettings returns the settings of the user with the passed id.
 	// If the settings are not cached, it returns nil.
-	UserSettings(userID discord.UserID) *UserSettings
+	UserSettings(userID discord.UserID) *confgetter.UserSettings
 	// SetUserSettings updates the settings of the user with the passed id,
 	// with the passed settings.
-	SetUserSettings(userID discord.UserID, s *UserSettings)
-}
-
-type (
-	GuildSettings struct {
-		Prefix   string
-		Language string
-		TimeZone *time.Location
-	}
-
-	UserSettings struct {
-		Language string
-		TimeZone *time.Location
-	}
-)
-
-func (s *GuildSettings) Clone() *GuildSettings {
-	if s == nil {
-		return nil
-	}
-
-	return &GuildSettings{
-		Prefix:   s.Prefix,
-		Language: s.Language,
-		TimeZone: s.TimeZone,
-	}
-}
-
-func (s *UserSettings) Clone() *UserSettings {
-	if s == nil {
-		return nil
-	}
-
-	return &UserSettings{
-		Language: s.Language,
-		TimeZone: s.TimeZone,
-	}
+	SetUserSettings(userID discord.UserID, s *confgetter.UserSettings)
 }

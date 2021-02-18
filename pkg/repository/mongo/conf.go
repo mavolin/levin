@@ -2,19 +2,17 @@ package mongo
 
 import (
 	"context"
-	"time"
 
 	"github.com/diamondburned/arikawa/v2/discord"
 	"github.com/mavolin/adam/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"github.com/mavolin/levin/pkg/confgetter"
 	"github.com/mavolin/levin/pkg/repository"
-	"github.com/mavolin/levin/pkg/repository/cache"
-	"github.com/mavolin/levin/plugins/conf"
 )
 
-var _ conf.Repository = new(Repository)
+var _ confgetter.Repository = new(Repository)
 
 // =============================================================================
 // Types
@@ -23,33 +21,30 @@ var _ conf.Repository = new(Repository)
 // ================================ guildSettings ================================
 
 type guildSettings struct {
-	GuildID  discord.GuildID `bson:"guild_id"`
-	Prefix   string          `bson:"prefix,omitempty"`
-	Language string          `bson:"language,omitempty"`
-	TimeZone *Location       `bson:"time_zone"`
+	GuildID          discord.GuildID  `bson:"guild_id"`
+	Prefix           string           `bson:"prefix,omitempty"`
+	Language         languageTag      `bson:"language,omitempty"`
+	TimeZone         *location        `bson:"time_zone"`
+	BotMasterUserIDs []discord.UserID `bson:"bot_master_user_ids"`
+	BotMasterRoleIDs []discord.RoleID `bson:"bot_master_role_ids"`
 }
 
-func newDefaultGuildSettings(d *repository.Defaults) *guildSettings {
+func newDefaultGuildSettings(guildID discord.GuildID, d *repository.Defaults) *guildSettings {
 	return &guildSettings{
+		GuildID:  guildID,
 		Prefix:   d.Prefix,
-		Language: d.Language,
-		TimeZone: (*Location)(d.TimeZone),
+		Language: languageTag(d.Language),
+		TimeZone: (*location)(d.TimeZone),
 	}
 }
 
-func newGuildSettingsFromCache(s *cache.GuildSettings) *guildSettings {
-	return &guildSettings{
-		Prefix:   s.Prefix,
-		Language: s.Language,
-		TimeZone: (*Location)(s.TimeZone),
-	}
-}
-
-func (s *guildSettings) CacheType() *cache.GuildSettings {
-	return &cache.GuildSettings{
-		Prefix:   s.Prefix,
-		Language: s.Language,
-		TimeZone: s.TimeZone.Location(),
+func (s *guildSettings) toConfType() *confgetter.GuildSettings {
+	return &confgetter.GuildSettings{
+		Prefix:           s.Prefix,
+		Language:         s.Language.baseType(),
+		TimeZone:         s.TimeZone.baseType(),
+		BotMasterUserIDs: s.BotMasterUserIDs,
+		BotMasterRoleIDs: s.BotMasterRoleIDs,
 	}
 }
 
@@ -57,28 +52,22 @@ func (s *guildSettings) CacheType() *cache.GuildSettings {
 
 type userSettings struct {
 	UserID   discord.UserID `bson:"user_id"`
-	Language string         `bson:"language,omitempty"`
-	TimeZone *Location      `bson:"time_zone"`
+	Language languageTag    `bson:"language,omitempty"`
+	TimeZone *location      `bson:"time_zone"`
 }
 
-func newDefaultUserSettings(d *repository.Defaults) *userSettings {
+func newDefaultUserSettings(userID discord.UserID, d *repository.Defaults) *userSettings {
 	return &userSettings{
-		Language: d.Language,
-		TimeZone: (*Location)(d.TimeZone),
+		UserID:   userID,
+		Language: languageTag(d.Language),
+		TimeZone: (*location)(d.TimeZone),
 	}
 }
 
-func newUserSettingsFromCache(s *cache.UserSettings) *userSettings {
-	return &userSettings{
-		Language: s.Language,
-		TimeZone: (*Location)(s.TimeZone),
-	}
-}
-
-func (s *userSettings) CacheType() *cache.UserSettings {
-	return &cache.UserSettings{
-		Language: s.Language,
-		TimeZone: s.TimeZone.Location(),
+func (s *userSettings) toConfType() *confgetter.UserSettings {
+	return &confgetter.UserSettings{
+		Language: s.Language.baseType(),
+		TimeZone: s.TimeZone.baseType(),
 	}
 }
 
@@ -86,105 +75,70 @@ func (s *userSettings) CacheType() *cache.UserSettings {
 // Methods
 // =====================================================================================
 
-func (r *Repository) Prefix(guildID discord.GuildID) (string, error) {
-	s, err := r.getGuildSettings(guildID)
-	if err != nil {
-		return "", err
-	}
-
-	return s.Prefix, nil
-}
-
-func (r *Repository) GuildLanguage(guildID discord.GuildID) (string, error) {
-	s, err := r.getGuildSettings(guildID)
-	if err != nil {
-		return "", err
-	}
-
-	return s.Language, nil
-}
-
-func (r *Repository) GuildTimeZone(guildID discord.GuildID) (*time.Location, error) {
-	s, err := r.getGuildSettings(guildID)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.TimeZone.Location(), nil
-}
-
-func (r *Repository) UserLanguage(userID discord.UserID) (string, error) {
-	s, err := r.getUserSettings(userID)
-	if err != nil {
-		return "", err
-	}
-
-	return s.Language, nil
-}
-
-func (r *Repository) UserTimeZone(userID discord.UserID) (*time.Location, error) {
-	s, err := r.getUserSettings(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	return s.TimeZone.Location(), nil
-}
-
-func (r *Repository) getGuildSettings(guildID discord.GuildID) (*guildSettings, error) {
+func (r *Repository) GuildSettings(guildID discord.GuildID) (*confgetter.GuildSettings, error) {
 	if !guildID.IsValid() {
 		return nil, errors.NewWithStack("invalid guild id")
 	}
 
 	if s := r.cache.GuildSettings(guildID); s != nil {
-		return newGuildSettingsFromCache(s), nil
-	}
-
-	res := r.guildSettings.FindOne(context.Background(), bson.M{"guild_id": guildID})
-	if errors.Is(res.Err(), mongo.ErrNoDocuments) {
-		s := newDefaultGuildSettings(r.defaults)
-		s.GuildID = guildID
-
-		_, err := r.guildSettings.InsertOne(context.Background(), s)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
+		return s, nil
 	}
 
 	var s *guildSettings
-	if err := res.Decode(&s); err != nil {
+
+	err := r.db.Client().UseSession(context.Background(), func(ctx mongo.SessionContext) error {
+		res := r.guildSettings.FindOne(ctx, bson.M{"guild_id": guildID})
+		if errors.Is(res.Err(), mongo.ErrNoDocuments) { // new guild?
+			s = newDefaultGuildSettings(guildID, r.defaults)
+
+			_, err := r.guildSettings.InsertOne(ctx, s)
+			return errors.WithStack(err)
+		} else if res.Err() != nil {
+			return errors.WithStack(res.Err())
+		}
+
+		return errors.WithStack(res.Decode(&s))
+	})
+	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	r.cache.SetGuildSettings(guildID, s.CacheType())
-	return s, nil
+	sconf := s.toConfType()
+
+	r.cache.SetGuildSettings(guildID, sconf)
+	return sconf, nil
 }
 
-func (r *Repository) getUserSettings(userID discord.UserID) (*userSettings, error) {
+func (r *Repository) UserSettings(userID discord.UserID) (*confgetter.UserSettings, error) {
 	if !userID.IsValid() {
 		return nil, errors.NewWithStack("invalid user id")
 	}
 
 	if s := r.cache.UserSettings(userID); s != nil {
-		return newUserSettingsFromCache(s), nil
-	}
-
-	res := r.userSettings.FindOne(context.Background(), bson.M{"user_id": userID})
-	if errors.Is(res.Err(), mongo.ErrNoDocuments) {
-		s := newDefaultUserSettings(r.defaults)
-		s.UserID = userID
-
-		_, err := r.userSettings.InsertOne(context.Background(), s)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
+		return s, nil
 	}
 
 	var s *userSettings
-	if err := res.Decode(&s); err != nil {
+
+	err := r.db.Client().UseSession(context.Background(), func(ctx mongo.SessionContext) error {
+		res := r.userSettings.FindOne(ctx, bson.M{"user_id": userID})
+		if errors.Is(res.Err(), mongo.ErrNoDocuments) { // new user?
+			s = newDefaultUserSettings(userID, r.defaults)
+
+			_, err := r.userSettings.InsertOne(ctx, s)
+			return errors.WithStack(err)
+		} else if res.Err() != nil {
+			return errors.WithStack(res.Err())
+		}
+
+		return errors.WithStack(res.Decode(&s))
+	})
+	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	r.cache.SetUserSettings(userID, s.CacheType())
-	return s, nil
+	sconf := s.toConfType()
+
+	r.cache.SetUserSettings(userID, sconf)
+	return sconf, nil
 }
