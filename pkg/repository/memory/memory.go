@@ -12,10 +12,10 @@ import (
 
 type Repository struct {
 	GuildSettingsData  map[discord.GuildID]*confgetter.GuildSettings
-	guildSettingsMutex sync.RWMutex
+	guildSettingsMutex sync.Mutex
 
 	UserSettingsData  map[discord.UserID]*confgetter.UserSettings
-	userSettingsMutex sync.RWMutex
+	userSettingsMutex sync.Mutex
 
 	defaults *repository.Defaults
 }

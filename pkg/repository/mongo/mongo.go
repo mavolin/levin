@@ -38,8 +38,6 @@ func New(uri string, dbName string, d *repository.Defaults) (*Repository, error)
 		return nil, err
 	}
 
-	d.FillZeros()
-
 	db := m.Database(dbName)
 
 	return &Repository{

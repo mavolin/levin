@@ -78,10 +78,9 @@ func (p *Prefix) Invoke(s *state.State, ctx *plugin.Context) (interface{}, error
 			return responseNoPrefix, nil
 		}
 
-		return responseCurrentPrefix.
-			WithPlaceholders(responseCurrentPrefixPlaceholders{
-				Prefix: ctx.Prefixes[0],
-			}), nil
+		return responseCurrentPrefix.WithPlaceholders(responseCurrentPrefixPlaceholders{
+			Prefix: ctx.Prefixes[0],
+		}), nil
 	}
 
 	if err := p.repo.SetPrefix(ctx.GuildID, newPrefix); err != nil {

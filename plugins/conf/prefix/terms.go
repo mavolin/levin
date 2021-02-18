@@ -17,7 +17,7 @@ var (
 
 	exampleArgs = []*i18n.Config{
 		i18n.EmptyConfig,
-		i18n.NewFallbackConfig("plugin.conf.prefix.example_args.new", "!"),
+		i18n.NewFallbackConfig("plugin.conf.prefix.example_args.new_prefix", "!"),
 	}
 )
 
@@ -25,7 +25,7 @@ var (
 // Arguments
 // =====================================================================================
 
-var argNewPrefixName = i18n.NewFallbackConfig("plugin.conf.prefix.arg.plugin.name", "New Prefix")
+var argNewPrefixName = i18n.NewFallbackConfig("plugin.conf.prefix.arg.new_prefix.name", "New Prefix")
 
 // =============================================================================
 // Flags

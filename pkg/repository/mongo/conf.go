@@ -77,7 +77,7 @@ func (s *userSettings) toConfType() *confgetter.UserSettings {
 
 func (r *Repository) GuildSettings(guildID discord.GuildID) (*confgetter.GuildSettings, error) {
 	if !guildID.IsValid() {
-		return nil, errors.NewWithStack("invalid guild id")
+		return nil, errors.NewWithStack("repository: invalid guild id")
 	}
 
 	if s := r.cache.GuildSettings(guildID); s != nil {
@@ -109,9 +109,41 @@ func (r *Repository) GuildSettings(guildID discord.GuildID) (*confgetter.GuildSe
 	return sconf, nil
 }
 
+func (r *Repository) SetPrefix(guildID discord.GuildID, prefix string) error {
+	if !guildID.IsValid() {
+		return errors.NewWithStack("repository: invalid guild id")
+	}
+
+	if s := r.cache.GuildSettings(guildID); s != nil {
+		s.Prefix = prefix
+		r.cache.SetGuildSettings(guildID, s)
+	}
+
+	err := r.db.Client().UseSession(context.Background(), func(ctx mongo.SessionContext) error {
+		res, err := r.guildSettings.UpdateOne(context.Background(), bson.M{"guild_id": guildID},
+			bson.M{"prefix": prefix})
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		if res.MatchedCount > 0 {
+			return nil
+		}
+
+		// new guild
+		s := newDefaultGuildSettings(guildID, r.defaults)
+		s.Prefix = prefix
+
+		_, err = r.guildSettings.InsertOne(ctx, s)
+		return errors.WithStack(err)
+	})
+
+	return errors.WithStack(err)
+}
+
 func (r *Repository) UserSettings(userID discord.UserID) (*confgetter.UserSettings, error) {
 	if !userID.IsValid() {
-		return nil, errors.NewWithStack("invalid user id")
+		return nil, errors.NewWithStack("repository: invalid user id")
 	}
 
 	if s := r.cache.UserSettings(userID); s != nil {
